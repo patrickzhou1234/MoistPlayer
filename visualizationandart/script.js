@@ -1,4 +1,4 @@
-songs = ["Eastside", "Better Now", "hot girl bummer", "if I were u", "LETS GO", "Ransom", "Graduation", "Money Made Me Do It", "Your New Boyfriend", "Candy Paint", "you were good to me", "LOT OF ME", "Circles", "Shape of You", "Shivers", "fuck, i'm lonely", "Haru Haru", "Money Trees", "God's Plan", "Summer Of Love", "Graveyard", "Riptide", "Beautiful", "Anyone", "There's Nothing Holdin' Me Back", "Jocelyn Flores", "all the kids are depressed", "STAY", "WoW", "One Right Now", "THATS WHAT I WANT", "Diamonds", "3_15", "I Like Me Better", "me & ur ghost", "Paradise", "Payphone", "queen of broken hearts", "Starboy", "Beautiful Mistakes", "Lucky You", "cheers", "Go Dumb", "Without Me", "Be Kind", "Godzilla", "Paris in the Rain", "Takeaway"];
+songs = ["Eastside", "Better Now", "hot girl bummer", "if I were u", "LETS GO", "Ransom", "Graduation", "Money Made Me Do It", "Your New Boyfriend", "Candy Paint", "you were good to me", "LOT OF ME", "Circles", "Shape of You", "Shivers", "fuck, i'm lonely", "Haru Haru", "Money Trees", "God's Plan", "Summer Of Love", "Graveyard", "Riptide", "Beautiful", "Anyone", "There's Nothing Holdin' Me Back", "Jocelyn Flores", "all the kids are depressed", "STAY", "WoW", "One Right Now", "THATS WHAT I WANT", "Diamonds", "3:15", "I Like Me Better", "me & ur ghost", "Paradise", "Payphone", "queen of broken hearts", "Starboy", "Beautiful Mistakes", "Lucky You", "cheers", "Go Dumb", "Without Me", "Be Kind", "Godzilla", "Paris in the Rain", "Takeaway"];
 artAlbum = ["Eastside", "beerbongs & bentleys", "everything means nothing", "everything means nothing", "DRIP TAPE GUIDANCE CUT", "We Love You Tecca", "Graduation", "Stoney", "Your New Boyfriend", "beerbongs & bentleys", "brent", "We Love You Tecca 2", "hollywood's bleeding", "divide", "Shivers", "how i'm feeling", "Stand Up", "good kid, m.A.A.d city", "Scorpion", "Summer Of Love", "Maniac", "Pluto Tapes Volume 2", "COSMIC", "Justice", "Illuminate", "17", "glisten", "STAY", "Hollywood's Bleeding", "One Right Now", "MONTERO", "Diamonds", "COSMIC", "I met you when I was 18", "everything means nothing", "Soul Searching", "Overexposed", "everything means nothing", "Starboy", "JORDI", "Kamikaze", "cheers", "Go Dumb", "Maniac", "Be Kind", "Music To Be Murdered By", "I met you when I was 18", "World War Joy"];
 art = document.getElementById("art");
 slider = document.getElementById("musicslider");
@@ -7,6 +7,7 @@ volume = document.getElementById("volumeslider");
 selector = document.getElementById("selectorpanel");
 queue = 0;
 howls = [];
+baitaudio = document.getElementsByTagName("audio")[0];
 
 for (i=0;i<songs.length;i++) {
   player = new Howl({
@@ -24,15 +25,54 @@ for (i=0;i<songs.length;i++) {
     },
     onload: function() {
       howls[queue].play();
+      baitaudio.play();
       slider.max = howls[queue]._duration;
       title.innerHTML = "Now Playing: "+songs[queue];
       art.src = "./art/"+artAlbum[queue]+".jpg";
+      if ( 'mediaSession' in navigator ) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: songs[queue],
+          artist: artAlbum[queue],
+      		album: artAlbum[queue],
+      		artwork: [
+      { src: './art/'+artAlbum[queue]+'.jpg', sizes: '96x96', type: 'image/png' },
+			{ src: './art/'+artAlbum[queue]+'.jpg', sizes: '128x128', type: 'image/png' },
+			 { src: './art/'+artAlbum[queue]+'.jpg', sizes: '192x192', type: 'image/png' },
+			 { src: './art/'+artAlbum[queue]+'.jpg', sizes: '256x256', type: 'image/png' },
+			 { src: './art/'+artAlbum[queue]+'.jpg', sizes: '384x384', type: 'image/png' },
+			 { src: './art/'+artAlbum[queue]+'.jpg', sizes: '512x512', type: 'image/png' }
+          ]
+        });
+      }
     }
   });
   howls.push(player);
   selector.innerHTML+="<span onclick='selectsong()' class='songselector'>"+songs[i]+"</span><br>";
 }
 howls[0].load();
+
+navigator.mediaSession.setActionHandler('pause', () => {
+    baitaudio.pause();
+    howls[queue].pause();
+    title.innerHTML = "Paused: "+songs[queue];
+});
+navigator.mediaSession.setActionHandler('play', () => {
+    baitaudio.play();
+    howls[queue].play();
+    title.innerHTML = "Now Playing: "+songs[queue];
+});
+navigator.mediaSession.setActionHandler('seekbackward', () => {
+    skip("backward");
+});
+navigator.mediaSession.setActionHandler('seekforward', () => {
+  skip("forward");
+});
+navigator.mediaSession.setActionHandler('previoustrack', () => {
+  skip("backward");
+});
+navigator.mediaSession.setActionHandler('nexttrack', () => {
+  skip("forward");
+});
 
 function updateTime() {
   howls[queue].seek(slider.value);
@@ -63,9 +103,11 @@ function skip(id) {
 function checkkey(event) {
   if (event.keyCode == "32") {
     if (howls[queue].playing()) {
+      baitaudio.pause();
       howls[queue].pause();
       title.innerHTML = "Paused: "+songs[queue];
     } else {
+      baitaudio.play();
       howls[queue].play();
       title.innerHTML = "Now Playing: "+songs[queue];
     }
